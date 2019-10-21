@@ -11,10 +11,13 @@ import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
 
+import discord4j.core.object.entity.MessageChannel;
+
 public class TrackScheduler extends AudioEventAdapter implements AudioLoadResultHandler {
 
 	private final AudioPlayer player;
 	private final BlockingQueue<AudioTrack> queue;
+	private MessageChannel outputChannel;
 
 	/**
 	 * @param player The audio player this scheduler uses
@@ -22,6 +25,10 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 	public TrackScheduler(AudioPlayer player) {
 		this.player = player;
 		this.queue = new LinkedBlockingQueue<>();
+	}
+
+	public void setOutputChannel(MessageChannel outputChannel) {
+		this.outputChannel = outputChannel;
 	}
 
 	/**
@@ -74,16 +81,19 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 	@Override
 	public void onTrackStart(AudioPlayer player, AudioTrack track) {
 		// A track started playing
+		outputChannel.createMessage("playing " + track.getInfo().title);
 	}
 
 	@Override
 	public void onTrackException(AudioPlayer player, AudioTrack track, FriendlyException exception) {
 		// An already playing track threw an exception (track end event will still be received separately)
+		outputChannel.createMessage("An Error Occured while trying to play a track: " + exception.getMessage());
 	}
 
 	@Override
 	public void onTrackStuck(AudioPlayer player, AudioTrack track, long thresholdMs) {
 		// Audio track has been unable to provide us any audio, might want to just start a new track
+		outputChannel.createMessage("Unable to get any audio data from provided track: " + track.getInfo().title);
 	}
 
 

@@ -3,6 +3,9 @@
  */
 package Discord.Ducktales.Bot;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
@@ -18,8 +21,11 @@ import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.VoiceState;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
+import discord4j.core.object.entity.MessageChannel;
 import discord4j.core.object.entity.VoiceChannel;
 import discord4j.voice.AudioProvider;
+import discord4j.voice.VoiceConnection;
+import reactor.core.publisher.Mono;
 
 public class App {
 
@@ -50,36 +56,108 @@ public class App {
 		/* Link Discord4j and Lavaplayer together */
 		provider = new LavaPlayerAudioProvider(player);
 
+		/* Initialize Command Queue */
+		initializeCommands();
+
+
 		client.login().block();
 	}
-	
+
 	private static AudioProvider provider;
 
 	private static AudioPlayerManager playerManager;
 	private static TrackScheduler trackScheduler;
 
 	private static void handleMsg(MessageCreateEvent event) {
-		Message msg = event.getMessage();
-		if (msg.getContent().map("!ping"::equals).orElse(false)) {
-			msg.getChannel().block().createMessage("Pong!").block();
+		/* Set Bot Output Channel for more Output */
+		trackScheduler.setOutputChannel(event.getMessage().getChannel().block());
+
+		final String content = event.getMessage().getContent().orElse("");
+		for (final Map.Entry<String, CommandInfo> entry : commands.entrySet()) {
+			if (content.startsWith(entry.getKey())) {
+				entry.getValue().cmd.execute(event);
+				break;
+			}
 		}
-		if (msg.getContent().map("!join"::equals).orElse(false)) {
+
+	}
+
+	private static Map<String, CommandInfo> commands = new HashMap<String, CommandInfo>();
+
+	/* Holds the currently active Connection to a Voice-Chat and is being used to disconnect from a Voice-Channel */
+	private static VoiceConnection con;
+
+	private static void initializeCommands() {
+		commands.put("!help", new CommandInfo("!help", "Show the Help Message", event -> {
+			MessageChannel channel = event.getMessage().getChannel().block();
+			for (final Map.Entry<String, CommandInfo> entry : commands.entrySet()) {
+				CommandInfo info = entry.getValue();
+				channel.createMessage("Command/Usage: " + info.usage).and(
+				channel.createMessage("Description: " + info.description).and(
+				channel.createMessage("-------------"))).block();
+			}
+		}));
+		commands.put("!ping", new CommandInfo("!ping", "get yourself a pong", event -> {
+			event.getMessage().getChannel().block().createMessage("Pong!").block();
+		}));
+		/*
+		commands.put("!join", new CommandInfo("!join", "let Ducktales Bot join your voice channel", event -> Mono.justOrEmpty(event.getMember())
+					.flatMap(Member::getVoiceState)
+					.flatMap(VoiceState::getChannel)
+					// join returns a VoiceConnection which would be required if we were
+					// adding disconnection features, but for now we are just ignoring it.
+					.flatMap(channel -> channel.join(spec -> spec.setProvider(provider))) 
+					.then()));
+		*/
+		commands.put("!join", new CommandInfo("!join", "let Ducktales Bot join your voice channel", event -> {
 			final Member member = event.getMember().orElse(null);
 			if (member != null) {
 				final VoiceState voiceState = member.getVoiceState().block();
 				if (voiceState != null) {
 					final VoiceChannel channel = voiceState.getChannel().block();
 					if (channel != null) {
-						// join returns a VoiceConnection which would be required if we were
-						// adding disconnection features, but for now we are just ignoring it.
 						channel.join(spec -> spec.setProvider(provider)).block();
 					}
 				}
 			}
-		}
-		if (msg.getContent().map("!test"::equals).orElse(false)) {
-			msg.getChannel().block().createMessage("playing").block();
+		}));
+
+		commands.put("!play", new CommandInfo("!play [youtube-video-link or Soundcloud or ...]", "Let the Ducktales Bot join your voice channel and append audio to the video queue", event -> {
+			final Member member = event.getMember().orElse(null);
+			if (member != null) {
+				final VoiceState voiceState = member.getVoiceState().block();
+				if (voiceState != null) {
+					final VoiceChannel channel = voiceState.getChannel().block();
+					if (channel != null) {
+						VoiceChannel schan = client.getSelf().block().asMember(channel.getGuildId()).block().getVoiceState().block().getChannel().block();
+						if (schan != null) {
+							/* If you are not in the voice channel of the caller, join the voice channel */
+							if (schan.getId().asLong() != channel.getId().asLong()) {
+								App.con = channel.join(spec -> spec.setProvider(provider)).block();
+								System.out.println("Test");
+							}
+						}
+						String url = event.getMessage().getContent().get().split(" ")[1];
+						playerManager.loadItem(url, trackScheduler);
+					}
+				}
+			}
+		}));
+		commands.put("!stop", new CommandInfo("!stop", "Stop the currently playing audio", event -> {
+		}));
+
+		commands.put("!test", new CommandInfo("!test", "Test", event -> {
+			MessageChannel channel = event.getMessage().getChannel().block();
+			channel.createMessage("playing").block();
+			client.getGuilds().collectList().block().forEach(guild -> channel.createMessage("Group: " + guild.getId().asString()).block());
+			client.getGuilds().collectList().block().forEach(guild -> channel.createMessage("Group: " + guild.getName()).block());
+			channel.createMessage("Self-ID: " + client.getSelfId().get().asString()).block();
+			channel.createMessage("playing2").block();
 			playerManager.loadItem("https://www.youtube.com/watch?v=fzQ6gRAEoy0", trackScheduler);
-		}
+		}));
+		commands.put("!leave", new CommandInfo("!leave", "Tell the Ducktales Bot to leave it's current voice-channel", event -> {
+			if (con != null)
+				con.disconnect();
+		}));
 	}
 }
