@@ -1,7 +1,7 @@
-package Discord.Ducktales.Bot;
-
+package Discord.Ducktales.Bot; 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.stream.Collectors;
 
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
@@ -18,6 +18,7 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 	private final AudioPlayer player;
 	private final BlockingQueue<AudioTrack> queue;
 	private MessageChannel outputChannel;
+	private Logger logger = new Logger("TrackScheduler-Logger");
 
 	/**
 	 * @param player The audio player this scheduler uses
@@ -32,8 +33,18 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 	}
 
 	/**
+	 * Print the Current Track-Queue
+	 * @param number of next Queue Entrys to show
+	 */
+	public void showQueue(int count) {
+		queue.forEach(track -> logger.debug(track.getInfo().title));
+		String output = queue.stream().limit(count).map(track -> track.getInfo().title).collect(Collectors.joining("\n"));
+		logger.debug("Show Queue:\n" + output);
+		outputChannel.createMessage("Currently running Queue:\n" + output).block();
+	}
+
+	/**
 	 * Add the next track to queue or play right away if nothing is in the queue.
-	 *
 	 * @param track The track to play or add to queue.
 	 */
 	public void queue(AudioTrack track) {
@@ -41,7 +52,10 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 		// something is playing, it returns false and does nothing. In that case the player was already playing so this
 		// track goes to the queue instead.
 		if (!player.startTrack(track, true)) {
+			logger.debug("Queueing... new AudioTrack: " + track.getInfo().title);
 			queue.offer(track);
+			logger.debug("Queued new AudioTrack: " + track.getInfo().title);
+			outputChannel.createMessage("Queued new AudioTrack: " + track.getInfo().title).block();
 		}
 	}
 
@@ -49,9 +63,42 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 	 * Start the next track, stopping the current one if it is playing.
 	 */
 	public void nextTrack() {
+		AudioTrack track = queue.poll();
+		//this.outputChannel.createMessage("Start next AudioTrack: " + track.getInfo().title).block();
+		logger.debug("Starting... next AudioTrack: " + track.getInfo().title);
 		// Start the next track, regardless of if something is already playing or not. In case queue was empty, we are
 		// giving null to startTrack, which is a valid argument and will simply stop the player.
-		player.startTrack(queue.poll(), false);
+		player.startTrack(track, false);
+	}
+
+	/**
+	 * Stops the Audioplayer. If it is playing a track it skips the track and stops.
+	 */
+	public void stopPlayer() {
+		logger.debug("Stopping...: " + player.getPlayingTrack().getInfo().title);
+		player.stopTrack();
+	} 
+
+	/**
+	 * Pauses the Audioplayer. If it is playing a track it can be resumed with {@link resumePlayer}
+	 */
+	public void pausePlayer() {
+		logger.debug("Pausing...:  Audioplayer");
+		player.setPaused(true);
+	}
+	
+	/**
+	 * Resumes the Audioplayer. I
+	 */
+	public void resumePlayer() {
+		if (player.isPaused()) {
+			logger.debug("Player was paused. Resuming...: Audioplayer");
+			player.setPaused(false);
+		}
+		else {
+			logger.debug("Audioplayer was stopped:");
+			nextTrack();
+		}
 	}
 
 	@Override
@@ -60,9 +107,18 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 		// endReason == LOAD_FAILED: Loading of a track failed (mayStartNext = true).
 		// endReason == STOPPED: The player was stopped.
 		// endReason == REPLACED: Another track started playing while this had not finished
-		// endReason == CLEANUP: Player hasn't been queried for a while, if you want you can put a
+		// endReason == CLEANUP: Player hasn't been queried for a while, if you want you can put a clone of this back to your queue
 		
-		// Only start the next track if the end reason is suitable for it (FINISHED or LOAD_FAILED)
+		if (endReason == AudioTrackEndReason.REPLACED) {
+			logger.debug("OnTrackEnd: Skipped AudioTrack: " + track.getInfo().title);
+		}
+		if (endReason == AudioTrackEndReason.STOPPED) {
+			logger.debug("OnTrackEnd: The Player was stopped");
+		}
+		if (endReason == AudioTrackEndReason.CLEANUP) {
+			logger.debug("OnTrackEnd: Audioplayer hasn't been queried  for a while");
+		}
+		// Only start the next track if the end reason is suitable for it (FINISHED or LOAD_FAILED) 
 		if (endReason.mayStartNext) {
 			nextTrack();
 		}
@@ -71,29 +127,32 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 	@Override
 	public void onPlayerPause(AudioPlayer player) {
 		// Player was paused
+		logger.debug("Paused Audioplayer");
+		outputChannel.createMessage("Paused Audioplayer").block();
 	}
 
 	@Override
 	public void onPlayerResume(AudioPlayer player) {
 		// Player was resumed
+		logger.debug("Resumed Audioplayer");
+		outputChannel.createMessage("Resumed Audioplayer").block();
 	}
 
 	@Override
 	public void onTrackStart(AudioPlayer player, AudioTrack track) {
 		// A track started playing
-		outputChannel.createMessage("playing " + track.getInfo().title);
+		logger.debug("Started next Track: " + track.getInfo().title);
+		this.outputChannel.createMessage("Started next Track: " + track.getInfo().title).block();
 	}
 
 	@Override
 	public void onTrackException(AudioPlayer player, AudioTrack track, FriendlyException exception) {
 		// An already playing track threw an exception (track end event will still be received separately)
-		outputChannel.createMessage("An Error Occured while trying to play a track: " + exception.getMessage());
 	}
 
 	@Override
 	public void onTrackStuck(AudioPlayer player, AudioTrack track, long thresholdMs) {
 		// Audio track has been unable to provide us any audio, might want to just start a new track
-		outputChannel.createMessage("Unable to get any audio data from provided track: " + track.getInfo().title);
 	}
 
 
@@ -115,11 +174,13 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 
 	@Override
 	public void noMatches() {
-		
+		logger.debug("No Match found");
+		this.outputChannel.createMessage("No Match found").block();
 	}
 
 	@Override
 	public void loadFailed(FriendlyException exception) {
-		
+		logger.debug("Load failed: " + exception.getMessage());
+		this.outputChannel.createMessage("Load failed: " + exception.getMessage()).block();
 	}
 }
