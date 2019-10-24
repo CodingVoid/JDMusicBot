@@ -3,6 +3,7 @@
  */
 package Discord.Ducktales.Bot;
 
+import java.io.File;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
@@ -36,6 +37,7 @@ public class App {
 
 	public static void main(String[] args) {
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> client.logout().block(Duration.ofSeconds(1))));
+		Logger.addLogFile(new File("/var/log/DucktalesBot.log"));
 		/*
 		   DiscordBotListAPI api = new Builder()
 		   .token("OeUB7zCt8ITuPF-5yfa1ALUhbrMNR-qk")
