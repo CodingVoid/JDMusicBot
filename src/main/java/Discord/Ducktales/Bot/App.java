@@ -4,9 +4,7 @@
 package Discord.Ducktales.Bot;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
@@ -19,23 +17,22 @@ import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 
 import discord4j.core.DiscordClient;
 import discord4j.core.DiscordClientBuilder;
-import discord4j.core.event.domain.lifecycle.DisconnectEvent;
 import discord4j.core.event.domain.lifecycle.ReadyEvent;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.VoiceState;
 import discord4j.core.object.entity.Member;
-import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.MessageChannel;
 import discord4j.core.object.entity.VoiceChannel;
 import discord4j.core.object.util.Snowflake;
 import discord4j.voice.AudioProvider;
 import discord4j.voice.VoiceConnection;
-import reactor.core.publisher.Mono;
 
 public class App {
 
 	private static Logger logger = new Logger("Command-Logger");
 	private static final DiscordClient client = new DiscordClientBuilder("Mjg3MzI4MzU5Njc4MjE0MTU1.XayxVg.OOMDFgF66DVClhe_HTBfThB5_cA").build();
+
+	private static final String PREFIX = "#";
 
 	public static void main(String[] args) {
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> client.logout().block(Duration.ofSeconds(1))));
@@ -84,7 +81,7 @@ public class App {
 
 		final String content = event.getMessage().getContent().orElse("");
 		for (final Map.Entry<String, CommandInfo> entry : commands.entrySet()) {
-			if (content.startsWith(entry.getKey())) {
+			if (content.startsWith(PREFIX + entry.getKey())) {
 				entry.getValue().cmd.execute(event);
 				break;
 			}
@@ -98,14 +95,14 @@ public class App {
 	private static Map<Long, VoiceConnection> vcons = new HashMap<Long, VoiceConnection>();
 
 	private static void initializeCommands() {
-		/* !help Command */
-		commands.put("!help", new CommandInfo("!help", "Show the Help Message", event -> {
+		/* help Command */
+		commands.put("help", new CommandInfo("help", "Show the Help Message", event -> {
 			MessageChannel channel = event.getMessage().getChannel().block();
 			StringBuilder builder = new StringBuilder();
 			for (final Map.Entry<String, CommandInfo> entry : commands.entrySet()) {
 				CommandInfo info = entry.getValue();
 				builder.append("Command/Usage: ");
-				builder.append(info.usage);
+				builder.append(PREFIX + info.usage);
 				builder.append("\nDescription: ");
 				builder.append(info.description);
 				builder.append("\n\n");
@@ -113,65 +110,65 @@ public class App {
 			channel.createMessage(builder.toString()).block();
 		}));
 
-		/* !ping Command */
-		commands.put("!ping", new CommandInfo("!ping", "get yourself a pong", event -> {
-			event.getMessage().getChannel().block().createMessage("Pong!").block();
+		/* ping Command */
+		commands.put("ping", new CommandInfo("ping", "get yourself a pong", event -> {
+			event.getMessage().getChannel().block().createMessage("Pong").block();
 		}));
 
-		/* !join Command */
-		commands.put("!join", new CommandInfo("!join", "let Ducktales Bot join your voice channel", event -> {
+		/* join Command */
+		commands.put("join", new CommandInfo("join", "let Ducktales Bot join your voice channel", event -> {
 			final Member member = event.getMember().orElse(null);
 			if (member != null) {
 				final VoiceState voiceState = member.getVoiceState().block();
 				if (voiceState != null) {
 					final VoiceChannel channel = voiceState.getChannel().block();
 					if (channel != null) {
-						logger.debug("At !join Command: Try to Join VoiceChannel");
+						logger.debug("At join Command: Try to Join VoiceChannel");
 						App.vcons.put(channel.getGuildId().asLong(), channel.join(spec -> spec.setProvider(provider)).block(Duration.ofSeconds(2)));
-						logger.debug("At !join Command: Tried to Join VoiceChannel. Either Successed or is timed out.");
+						logger.debug("At join Command: Tried to Join VoiceChannel. Either Successed or is timed out.");
 					}
 				}
 			}
 		}));
 
-		/* !play Command */
-		commands.put("!play", new CommandInfo("!play [youtube-video-link or Soundcloud or ...]", "Let the Ducktales Bot join your voice channel. If no Track is currently playing it's directly started and if not it's appended to the Audio-Queue", event -> {
+		/* play Command */
+		commands.put("play", new CommandInfo("play [youtube-video-link or Soundcloud or ...]", "Let the Ducktales Bot join your voice channel. If no Track is currently playing it's directly started and if not it's appended to the Audio-Queue", event -> {
 			final Member member = event.getMember().orElse(null);
 			if (member != null) {
 				final VoiceState voiceState = member.getVoiceState().block();
 				if (voiceState != null) {
 					final VoiceChannel channel = voiceState.getChannel().block();
 					if (channel != null) {
-						logger.debug("At !play Command: Get VoiceChannel of Ducktales Bot");
+						logger.debug("At play Command: Get VoiceChannel of Ducktales Bot");
 						//VoiceChannel schan = client.getSelf().block().asMember(channel.getGuildId()).block().getVoiceState().block().getChannel().block();
 						VoiceChannel schan = client.getSelf().flatMap(user -> user.asMember(channel.getGuildId())).flatMap(mem -> mem.getVoiceState()).flatMap(vstate -> vstate.getChannel()).block();
-						logger.debug("At !play Command: Check if Ducktales Bot is already in the VoiceChannel");
+						logger.debug("At play Command: Check if Ducktales Bot is already in the VoiceChannel");
 						if (!channel.equals(schan)) {
 							/* If you are not in the voice channel of the caller, join the voice channel */
-							logger.debug("At !play Command: Joining... VoiceChannel");
+							logger.debug("At play Command: Joining... VoiceChannel");
 							App.vcons.put(channel.getGuildId().asLong(), channel.join(spec -> spec.setProvider(provider)).block());
 						}
 						else {
-							logger.debug("At !play Command: Ducktales Bot already in the VoiceChannel");
+							logger.debug("At play Command: Ducktales Bot already in the VoiceChannel");
 						}
-						logger.debug("At !play Command: Load Audio-Track");
+						logger.debug("At play Command: Load Audio-Track");
 						String url = event.getMessage().getContent().get().split(" ")[1];
 						playerManager.loadItem(url, trackScheduler);
 					}
 					else {
-						logger.debug("At !play Command: User is not in a Voicechannel");
+						logger.debug("At play Command: User is not in a Voicechannel");
 					}
 				}
 				else {
-					logger.debug("At !play Command: Can't get Voicestate of User");
+					logger.debug("At play Command: Can't get Voicestate of User");
 				}
 			}
 			else {
-				logger.debug("!At !play Command: Can't get Member of User");
+				logger.debug("At play Command: Can't get Member of User");
 			}
 		}));
 
-		commands.put("!list", new CommandInfo("!list [count]", "Lists the next 10 Tracks or the next [count] tracks if specified", event -> {
+		commands.put("list", new CommandInfo("list [count]", "Lists the next 10 Tracks or the next [count] tracks if specified", event -> {
 			String[] args = event.getMessage().getContent().get().split(" ");
 			if (args.length > 1)
 				trackScheduler.showQueue(Integer.parseInt(args[1]));
@@ -179,36 +176,36 @@ public class App {
 				trackScheduler.showQueue(10);
 		}));
 
-		commands.put("!stop", new CommandInfo("!stop", "Stop the currently playing AudioTrack", event -> trackScheduler.stopPlayer()));
+		commands.put("stop", new CommandInfo("stop", "Skips the currently playing AudioTrack and stops the Audioplayer", event -> trackScheduler.stopPlayer()));
 
-		commands.put("!pause", new CommandInfo("!pause", "Pauses the Audioplayer", event -> trackScheduler.pausePlayer()));
+		commands.put("pause", new CommandInfo("pause", "Pauses the Audioplayer", event -> trackScheduler.pausePlayer()));
 
-		commands.put("!resume", new CommandInfo("!resume", "Resumes the Audioplayer if it's paused or if it is stopped", event -> trackScheduler.resumePlayer()));
+		commands.put("resume", new CommandInfo("resume", "Resumes the Audioplayer if it's paused or if it is stopped", event -> trackScheduler.resumePlayer()));
 
-		commands.put("!skip", new CommandInfo("!skip", "Skips the currently playing audio", event -> trackScheduler.nextTrack()));
+		commands.put("skip", new CommandInfo("skip", "Skips the currently playing audio", event -> trackScheduler.nextTrack()));
 
-		commands.put("!test", new CommandInfo("!test", "Test", event -> {
+		commands.put("test", new CommandInfo("test", "Test", event -> {
 			MessageChannel channel = event.getMessage().getChannel().block();
 			client.getGuilds().collectList().block().forEach(guild -> channel.createMessage("Group-ID: " + guild.getId().asString() + "\nGroup-Name: " + guild.getName() + '\n').block());
 			channel.createMessage("Self-ID: " + client.getSelfId().get().asString() + "\nSelf-Name: " + client.getSelf().block().getUsername()).block();
 			playerManager.loadItem("https://www.youtube.com/watch?v=fzQ6gRAEoy0", trackScheduler);
 		}));
-		commands.put("!leave", new CommandInfo("!leave", "Tell the Ducktales Bot to leave it's current voice-channel", event -> {
+		commands.put("leave", new CommandInfo("leave", "Tell the Ducktales Bot to leave it's current voice-channel", event -> {
 			long discordServer = event.getGuildId().get().asLong();
 			String serverName = client.getGuildById(Snowflake.of(discordServer)).block().getName();
 			MessageChannel channel = event.getMessage().getChannel().block();
 			if (vcons.containsKey(discordServer)) {
 				VoiceConnection vcon = vcons.remove(discordServer);
-				logger.debug("At !leave Command: Disconnect from VoiceChannel of Discord-Server: " + serverName);
+				logger.debug("At leave Command: Disconnect from VoiceChannel of Discord-Server: " + serverName);
 				vcon.disconnect();
 				channel.createMessage("Disconnected from VoiceChannel of Discord-Server: " + serverName).block();
 			}
 			else {
-				logger.debug("At !leave Command: Bot is not in a VoiceChannel on this Server");
+				logger.debug("At leave Command: Bot is not in a VoiceChannel on this Server");
 				channel.createMessage("I am not in a VoiceChannel on Discord-Server: " + serverName).block();
 			}
 		}));
-		commands.put("!logout", new CommandInfo("!logout", "Exit the Ducktales Bot Program", event -> {
+		commands.put("logout", new CommandInfo("logout", "Exit the Ducktales Bot Program", event -> {
 			logger.debug("Logging out...: " + client.getSelf().block().getUsername());
 			client.logout().block();
 		}));
