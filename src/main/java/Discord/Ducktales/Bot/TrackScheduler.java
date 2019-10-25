@@ -1,4 +1,5 @@
-package Discord.Ducktales.Bot; 
+package Discord.Ducktales.Bot;
+
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
@@ -19,6 +20,8 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 	private final BlockingQueue<AudioTrack> queue;
 	private MessageChannel outputChannel;
 	private Logger logger = new Logger("TrackScheduler-Logger");
+	private boolean loop = false;
+	private AudioTrack loopTrack;
 
 	/**
 	 * @param player The audio player this scheduler uses
@@ -60,11 +63,37 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 	}
 
 	/**
+	 * Clears the entire Queue
+	 */
+	public void clear() {
+		queue.clear();
+	}
+
+	/**
+	 * Loops the current AudioTrack
+	 */
+	public void loop() {
+		this.loopTrack = player.getPlayingTrack();
+		this.loop = true;
+	}
+	
+	/**
+	 * Stops the loop for the current AudioTrack
+	 */
+	public void unloop() {
+		this.loop = false;
+	}
+
+	/**
 	 * Start the next track, stopping the current one if it is playing.
 	 */
 	public void nextTrack() {
-		AudioTrack track = queue.poll();
-		//this.outputChannel.createMessage("Start next AudioTrack: " + track.getInfo().title).block();
+		AudioTrack track;
+		if (loop)
+			track = this.loopTrack;
+		else
+			track = queue.poll();
+
 		if (track != null)
 			logger.debug("Starting... next AudioTrack: " + track.getInfo().title);
 		else

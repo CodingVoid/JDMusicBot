@@ -186,6 +186,12 @@ public class App {
 
 		commands.put("skip", new CommandInfo("skip", "Skips the currently playing audio", event -> trackScheduler.nextTrack()));
 
+		commands.put("clear", new CommandInfo("clear", "Clears the entire Queue", event -> trackScheduler.clear()));
+
+		commands.put("loop", new CommandInfo("loop", "Loops the current Track", event -> trackScheduler.loop()));
+
+		commands.put("unloop", new CommandInfo("unloop", "Stops the loop for the current AudioTrack", event -> trackScheduler.unloop()));
+
 		commands.put("test", new CommandInfo("test", "Test", event -> {
 			MessageChannel channel = event.getMessage().getChannel().block();
 			client.getGuilds().collectList().block().forEach(guild -> channel.createMessage("Group-ID: " + guild.getId().asString() + "\nGroup-Name: " + guild.getName() + '\n').block());
