@@ -33,7 +33,9 @@ public class App {
 	private static Logger logger = new Logger("Command-Logger");
 	private static final DiscordClient client = new DiscordClientBuilder("Mjg3MzI4MzU5Njc4MjE0MTU1.XayxVg.OOMDFgF66DVClhe_HTBfThB5_cA").build();
 
-	private static final String PREFIX = "#";
+	public static final String CMD_PREFIX = "#";
+	public static final String MSG_PREFIX = "```";
+	public static final String MSG_POSTFIX = "```";
 
 	public static void main(String[] args) {
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> client.logout().block(Duration.ofSeconds(1))));
@@ -83,7 +85,7 @@ public class App {
 
 		final String content = event.getMessage().getContent().orElse("");
 		for (final Map.Entry<String, CommandInfo> entry : commands.entrySet()) {
-			if (content.startsWith(PREFIX + entry.getKey())) {
+			if (content.startsWith(CMD_PREFIX + entry.getKey())) {
 				entry.getValue().cmd.execute(event);
 				break;
 			}
@@ -104,17 +106,17 @@ public class App {
 			for (final Map.Entry<String, CommandInfo> entry : commands.entrySet()) {
 				CommandInfo info = entry.getValue();
 				builder.append("Command/Usage: ");
-				builder.append(PREFIX + info.usage);
+				builder.append(CMD_PREFIX + info.usage);
 				builder.append("\nDescription: ");
 				builder.append(info.description);
 				builder.append("\n\n");
 			}
-			channel.createMessage(builder.toString()).block();
+			channel.createMessage(MSG_PREFIX + builder.toString() + MSG_POSTFIX).block();
 		}));
 
 		/* ping Command */
 		commands.put("ping", new CommandInfo("ping", "get yourself a pong", event -> {
-			event.getMessage().getChannel().block().createMessage("Pong").block();
+			event.getMessage().getChannel().block().createMessage(MSG_PREFIX + "Pong" + MSG_POSTFIX).block();
 		}));
 
 		/* join Command */
@@ -194,8 +196,8 @@ public class App {
 
 		commands.put("test", new CommandInfo("test", "Test", event -> {
 			MessageChannel channel = event.getMessage().getChannel().block();
-			client.getGuilds().collectList().block().forEach(guild -> channel.createMessage("Group-ID: " + guild.getId().asString() + "\nGroup-Name: " + guild.getName() + '\n').block());
-			channel.createMessage("Self-ID: " + client.getSelfId().get().asString() + "\nSelf-Name: " + client.getSelf().block().getUsername()).block();
+			client.getGuilds().collectList().block().forEach(guild -> channel.createMessage(MSG_PREFIX + "Group-ID: " + guild.getId().asString() + "\nGroup-Name: " + guild.getName() + MSG_POSTFIX).block());
+			channel.createMessage(MSG_PREFIX + "Self-ID: " + client.getSelfId().get().asString() + "\nSelf-Name: " + client.getSelf().block().getUsername() + MSG_POSTFIX).block();
 			playerManager.loadItem("https://www.youtube.com/watch?v=fzQ6gRAEoy0", trackScheduler);
 		}));
 		commands.put("leave", new CommandInfo("leave", "Tell the Ducktales Bot to leave it's current voice-channel", event -> {
@@ -206,11 +208,11 @@ public class App {
 				VoiceConnection vcon = vcons.remove(discordServer);
 				logger.debug("At leave Command: Disconnect from VoiceChannel of Discord-Server: " + serverName);
 				vcon.disconnect();
-				channel.createMessage("Disconnected from VoiceChannel of Discord-Server: " + serverName).block();
+				channel.createMessage(MSG_PREFIX + "Disconnected from VoiceChannel of Discord-Server: " + serverName + MSG_POSTFIX).block();
 			}
 			else {
 				logger.debug("At leave Command: Bot is not in a VoiceChannel on this Server");
-				channel.createMessage("I am not in a VoiceChannel on Discord-Server: " + serverName).block();
+				channel.createMessage(MSG_PREFIX + "I am not in a VoiceChannel on Discord-Server: " + serverName + MSG_POSTFIX).block();
 			}
 		}));
 		commands.put("logout", new CommandInfo("logout", "Exit the Ducktales Bot Program", event -> {

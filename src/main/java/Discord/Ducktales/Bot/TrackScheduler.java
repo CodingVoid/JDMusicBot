@@ -43,7 +43,7 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 		queue.forEach(track -> logger.debug(track.getInfo().title));
 		String output = queue.stream().limit(count).map(track -> track.getInfo().title).collect(Collectors.joining("\n"));
 		logger.debug("Show Queue:\n" + output);
-		outputChannel.createMessage("Currently running Queue:\n" + output).block();
+		outputChannel.createMessage(App.MSG_PREFIX + "Currently running Queue:\n" + output + App.MSG_POSTFIX).block();
 	}
 
 	/**
@@ -58,7 +58,7 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 			logger.debug("Queueing... new AudioTrack: " + track.getInfo().title);
 			queue.offer(track);
 			logger.debug("Queued new AudioTrack: " + track.getInfo().title);
-			outputChannel.createMessage("Queued new AudioTrack: " + track.getInfo().title).block();
+			outputChannel.createMessage(App.MSG_PREFIX + "Queued new AudioTrack: " + track.getInfo().title + App.MSG_POSTFIX).block();
 		}
 	}
 
@@ -70,7 +70,7 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 
 		String msg = "Cleared Queue";
 		this.logger.debug(msg);
-		this.outputChannel.createMessage(msg).block();
+		this.outputChannel.createMessage(App.MSG_PREFIX + msg + App.MSG_POSTFIX).block();
 	}
 
 	/**
@@ -82,7 +82,7 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 
 		String msg = "Looping Track: " + this.loopTrack.getInfo().title;
 		this.logger.debug(msg);
-		this.outputChannel.createMessage(msg).block();
+		this.outputChannel.createMessage(App.MSG_PREFIX + msg + App.MSG_POSTFIX).block();
 	}
 	
 	/**
@@ -92,7 +92,7 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 		this.loop = false;
 		String msg = "Stopped looping Track: " + this.loopTrack.getInfo().title;
 		this.logger.debug(msg);
-		this.outputChannel.createMessage(msg).block();
+		this.outputChannel.createMessage(App.MSG_PREFIX + msg + App.MSG_POSTFIX).block();
 	}
 
 	/**
@@ -171,21 +171,21 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 	public void onPlayerPause(AudioPlayer player) {
 		// Player was paused
 		logger.debug("Paused Audioplayer");
-		outputChannel.createMessage("Paused Audioplayer").block();
+		outputChannel.createMessage(App.MSG_PREFIX + "Paused Audioplayer" + App.MSG_POSTFIX).block();
 	}
 
 	@Override
 	public void onPlayerResume(AudioPlayer player) {
 		// Player was resumed
 		logger.debug("Resumed Audioplayer");
-		outputChannel.createMessage("Resumed Audioplayer").block();
+		outputChannel.createMessage(App.MSG_PREFIX + "Resumed Audioplayer" + App.MSG_POSTFIX).block();
 	}
 
 	@Override
 	public void onTrackStart(AudioPlayer player, AudioTrack track) {
 		// A track started playing
 		logger.debug("Started next Track: " + track.getInfo().title);
-		this.outputChannel.createMessage("Started next Track: " + track.getInfo().title).block();
+		this.outputChannel.createMessage(App.MSG_PREFIX + "Started next Track: " + track.getInfo().title + App.MSG_POSTFIX).block();
 	}
 
 	@Override
@@ -218,12 +218,12 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 	@Override
 	public void noMatches() {
 		logger.debug("No Match found");
-		this.outputChannel.createMessage("No Match found").block();
+		this.outputChannel.createMessage(App.MSG_PREFIX + "No Match found" + App.MSG_POSTFIX).block();
 	}
 
 	@Override
 	public void loadFailed(FriendlyException exception) {
 		logger.debug("Load failed: " + exception.getMessage());
-		this.outputChannel.createMessage("Load failed: " + exception.getMessage()).block();
+		this.outputChannel.createMessage(App.MSG_PREFIX + "Load failed: " + exception.getMessage() + App.MSG_POSTFIX).block();
 	}
 }
