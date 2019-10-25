@@ -65,7 +65,10 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 	public void nextTrack() {
 		AudioTrack track = queue.poll();
 		//this.outputChannel.createMessage("Start next AudioTrack: " + track.getInfo().title).block();
-		logger.debug("Starting... next AudioTrack: " + track.getInfo().title);
+		if (track != null)
+			logger.debug("Starting... next AudioTrack: " + track.getInfo().title);
+		else
+			logger.debug("Cannot start nextTrack. Nothing in the Queue. Stopping the Audioplayer");
 		// Start the next track, regardless of if something is already playing or not. In case queue was empty, we are
 		// giving null to startTrack, which is a valid argument and will simply stop the player.
 		player.startTrack(track, false);
