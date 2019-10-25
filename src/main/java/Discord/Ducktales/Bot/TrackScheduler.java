@@ -67,6 +67,10 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 	 */
 	public void clear() {
 		queue.clear();
+
+		String msg = "Cleared Queue";
+		this.logger.debug(msg);
+		this.outputChannel.createMessage(msg).block();
 	}
 
 	/**
@@ -75,6 +79,10 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 	public void loop() {
 		this.loopTrack = player.getPlayingTrack();
 		this.loop = true;
+
+		String msg = "Looping Track: " + this.loopTrack.getInfo().title;
+		this.logger.debug(msg);
+		this.outputChannel.createMessage(msg).block();
 	}
 	
 	/**
@@ -82,6 +90,9 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 	 */
 	public void unloop() {
 		this.loop = false;
+		String msg = "Stopped looping Track: " + this.loopTrack.getInfo().title;
+		this.logger.debug(msg);
+		this.outputChannel.createMessage(msg).block();
 	}
 
 	/**
