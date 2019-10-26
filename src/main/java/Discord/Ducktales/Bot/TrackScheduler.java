@@ -6,7 +6,6 @@ import java.util.stream.Collectors;
 
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
@@ -111,10 +110,12 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 			track = queue.poll();
 		}
 
-		if (track != null)
+		if (track != null) {
 			logger.debug("Starting... next AudioTrack: " + track.getInfo().title);
-		else
-			logger.debug("Cannot start nextTrack. Nothing in the Queue. Stopping the Audioplayer");
+		}
+		else {
+			logger.debug("Cannot start next Track. Nothing left in the Queue. Stopping the Audioplayer");
+		}
 		// Start the next track, regardless of if something is already playing or not. In case queue was empty, we are
 		// giving null to startTrack, which is a valid argument and will simply stop the player.
 		player.startTrack(track, false);
@@ -203,7 +204,10 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 	@Override
 	public void onTrackStuck(AudioPlayer player, AudioTrack track, long thresholdMs) {
 		// Audio track has been unable to provide us any audio, might want to just start a new track
-		logger.debug("Track got stuck: " + track.getInfo().title + " ThresholdMS: " + thresholdMs);
+		String msg = "Track got stuck: " + track.getInfo().title + " ThresholdMS: " + thresholdMs + " Starting next Track";
+		logger.debug(msg);
+		outputChannel.createMessage(App.MSG_PREFIX + msg + App.MSG_POSTFIX).block();
+		nextTrack();
 	}
 
 
