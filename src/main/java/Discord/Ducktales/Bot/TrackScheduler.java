@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
@@ -77,7 +78,8 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 	 * Loops the current AudioTrack
 	 */
 	public void loop() {
-		this.loopTrack = player.getPlayingTrack();
+		/* Very Important to use 'makeClone()' because each AudioTrack saves it's current execution state and beacause of that we can't use it twice with the same reference */
+		this.loopTrack = player.getPlayingTrack().makeClone();
 		this.loop = true;
 
 		String msg = "Looping Track: " + this.loopTrack.getInfo().title;
@@ -90,6 +92,7 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 	 */
 	public void unloop() {
 		this.loop = false;
+
 		String msg = "Stopped looping Track: " + this.loopTrack.getInfo().title;
 		this.logger.debug(msg);
 		this.outputChannel.createMessage(App.MSG_PREFIX + msg + App.MSG_POSTFIX).block();
@@ -100,10 +103,13 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 	 */
 	public void nextTrack() {
 		AudioTrack track;
-		if (loop)
-			track = this.loopTrack;
-		else
+		if (loop) {
+		/* Very Important to use 'makeClone()' because each AudioTrack saves it's current execution state and beacause of that we can't use it twice with the same reference */
+			track = this.loopTrack.makeClone();
+		}
+		else {
 			track = queue.poll();
+		}
 
 		if (track != null)
 			logger.debug("Starting... next AudioTrack: " + track.getInfo().title);
@@ -161,7 +167,7 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 		if (endReason == AudioTrackEndReason.CLEANUP) {
 			logger.debug("OnTrackEnd: Audioplayer hasn't been queried  for a while");
 		}
-		// Only start the next track if the end reason is suitable for it (FINISHED or LOAD_FAILED) 
+		// Only start the next track if the end reason is suitable for it (FINISHED or LOAD_FAILED)
 		if (endReason.mayStartNext) {
 			nextTrack();
 		}
@@ -191,11 +197,13 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 	@Override
 	public void onTrackException(AudioPlayer player, AudioTrack track, FriendlyException exception) {
 		// An already playing track threw an exception (track end event will still be received separately)
+		logger.debug("Playing Track: " + track.getInfo().title + " threw an exception: " + exception.getMessage());
 	}
 
 	@Override
 	public void onTrackStuck(AudioPlayer player, AudioTrack track, long thresholdMs) {
 		// Audio track has been unable to provide us any audio, might want to just start a new track
+		logger.debug("Track got stuck: " + track.getInfo().title + " ThresholdMS: " + thresholdMs);
 	}
 
 
