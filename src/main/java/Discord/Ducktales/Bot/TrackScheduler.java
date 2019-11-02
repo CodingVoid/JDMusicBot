@@ -49,10 +49,10 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 	 * @param number of next Queue Entrys to show
 	 */
 	public void showQueue(int count) {
-		queue.forEach(track -> logger.debug(String.format("%s [%d:%d]", track.getInfo().title, this.getMinutes(track.getInfo().length), this.getSeconds(track.getInfo().length))));
+		queue.forEach(track -> logger.debug(String.format("%s [%d:%02d]", track.getInfo().title, this.getMinutes(track.getInfo().length), this.getSeconds(track.getInfo().length))));
 		String output = queue.stream()
 			.limit(count)
-			.map(track -> String.format("%s [%d:%d]", track.getInfo().title, getMinutes(track.getInfo().length), getSeconds(track.getInfo().length)))
+			.map(track -> String.format("%s [%d:%02d]", track.getInfo().title, getMinutes(track.getInfo().length), getSeconds(track.getInfo().length)))
 			.collect(Collectors.joining("\n"));
 		logger.debug("Show Queue:\n" + output);
 		outputChannel.createMessage(App.MSG_PREFIX + "Currently running Queue:\n" + output + App.MSG_POSTFIX).block();
@@ -69,7 +69,7 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 		if (!player.startTrack(track, true)) {
 			logger.debug("Queueing... new AudioTrack: " + track.getInfo().title);
 			queue.offer(track);
-			String formatted = String.format("Queued new AudioTrack: %s [%d:%d]", track.getInfo().title, getMinutes(track.getInfo().length), getSeconds(track.getInfo().length));
+			String formatted = String.format("Queued new AudioTrack: %s [%d:%02d]", track.getInfo().title, getMinutes(track.getInfo().length), getSeconds(track.getInfo().length));
 			logger.debug(formatted);
 			outputChannel.createMessage(App.MSG_PREFIX + formatted + App.MSG_POSTFIX).block();
 		}
@@ -90,7 +90,7 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 			tracks.remove(0);
 
 		tracks.forEach(track -> queue.offer(track));
-		String formatted = String.format("Queued new Playlist: %s [%d:%d]", playlist.getName(), getMinutes(playlistLength), getSeconds(playlistLength));
+		String formatted = String.format("Queued new Playlist: %s [%d:%02d]", playlist.getName(), getMinutes(playlistLength), getSeconds(playlistLength));
 		logger.debug(formatted);
 		outputChannel.createMessage(App.MSG_PREFIX + formatted + App.MSG_POSTFIX).block();
 	}
@@ -224,7 +224,7 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 	@Override
 	public void onTrackStart(AudioPlayer player, AudioTrack track) {
 		// A track started playing
-		String formatted = String.format("Started next Track: %s [%d:%d]",track.getInfo().title,  getMinutes(track.getInfo().length), getSeconds(track.getInfo().length));
+		String formatted = String.format("Started next Track: %s [%d:%02d]",track.getInfo().title,  getMinutes(track.getInfo().length), getSeconds(track.getInfo().length));
 		logger.debug(formatted);
 
 		this.outputChannel.createMessage(App.MSG_PREFIX + formatted + App.MSG_POSTFIX).block();
