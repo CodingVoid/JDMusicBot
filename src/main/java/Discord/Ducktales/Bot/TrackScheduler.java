@@ -35,13 +35,24 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 		this.outputChannel = outputChannel;
 	}
 
+	private long getSeconds(long milliseconds) {
+		return (milliseconds / 1000) % 60;
+	}
+
+	private long getMinutes(long milliseconds) {
+		return (milliseconds / 1000) / 60;
+	}
+
 	/**
 	 * Print the Current Track-Queue
 	 * @param number of next Queue Entrys to show
 	 */
 	public void showQueue(int count) {
-		queue.forEach(track -> logger.debug(track.getInfo().title));
-		String output = queue.stream().limit(count).map(track -> track.getInfo().title).collect(Collectors.joining("\n"));
+		queue.forEach(track -> logger.debug(String.format("%s [%d:%d]", track.getInfo().title, this.getMinutes(track.getInfo().length), this.getSeconds(track.getInfo().length))));
+		String output = queue.stream()
+			.limit(count)
+			.map(track -> String.format("%s [%d:%d]", track.getInfo().title, getMinutes(track.getInfo().length), getSeconds(track.getInfo().length)))
+			.collect(Collectors.joining("\n"));
 		logger.debug("Show Queue:\n" + output);
 		outputChannel.createMessage(App.MSG_PREFIX + "Currently running Queue:\n" + output + App.MSG_POSTFIX).block();
 	}
@@ -191,8 +202,10 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 	@Override
 	public void onTrackStart(AudioPlayer player, AudioTrack track) {
 		// A track started playing
-		logger.debug("Started next Track: " + track.getInfo().title);
-		this.outputChannel.createMessage(App.MSG_PREFIX + "Started next Track: " + track.getInfo().title + App.MSG_POSTFIX).block();
+		String formatted = String.format("Started next Track: %s [%d:%d]",track.getInfo().title,  getMinutes(track.getInfo().length), getSeconds(track.getInfo().length));
+		logger.debug(formatted);
+
+		this.outputChannel.createMessage(App.MSG_PREFIX + formatted + App.MSG_POSTFIX).block();
 	}
 
 	@Override
