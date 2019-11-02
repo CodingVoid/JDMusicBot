@@ -1,5 +1,6 @@
 package Discord.Ducktales.Bot;
 
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
@@ -68,9 +69,30 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 		if (!player.startTrack(track, true)) {
 			logger.debug("Queueing... new AudioTrack: " + track.getInfo().title);
 			queue.offer(track);
-			logger.debug("Queued new AudioTrack: " + track.getInfo().title);
-			outputChannel.createMessage(App.MSG_PREFIX + "Queued new AudioTrack: " + track.getInfo().title + App.MSG_POSTFIX).block();
+			String formatted = String.format("Queued new AudioTrack: %s [%d:%d]", track.getInfo().title, getMinutes(track.getInfo().length), getSeconds(track.getInfo().length));
+			logger.debug(formatted);
+			outputChannel.createMessage(App.MSG_PREFIX + formatted + App.MSG_POSTFIX).block();
 		}
+	}
+
+	public void queuePlaylist(AudioPlaylist playlist) {
+		List<AudioTrack> tracks = playlist.getTracks();
+		// Get playing length of entire Playlist in milliseconds
+		long playlistLength = tracks.stream()
+			.mapToLong(track -> track.getInfo().length)
+			.reduce(0, Long::sum);
+		logger.debug("Queueing... new Playlist: " + playlist.getName());
+		//	Calling startTrack with the noInterrupt set to true will start the track only if nothing is currently playing. If
+		// something is playing, it returns false and does nothing. In that case the player was already playing so this
+		// track goes to the queue instead.
+		// If the first Track of the playlist could successfully play, remove it from the tracks to be queued
+		if (player.startTrack(tracks.get(0), true))
+			tracks.remove(0);
+
+		tracks.forEach(track -> queue.offer(track));
+		String formatted = String.format("Queued new Playlist: %s [%d:%d]", playlist.getName(), getMinutes(playlistLength), getSeconds(playlistLength));
+		logger.debug(formatted);
+		outputChannel.createMessage(App.MSG_PREFIX + formatted + App.MSG_POSTFIX).block();
 	}
 
 	/**
@@ -239,8 +261,7 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 		if (playlist.isSearchResult()) {
 			this.queue(playlist.getTracks().get(0));
 		} else {
-			for (AudioTrack track : playlist.getTracks())
-				this.queue(track);
+			this.queuePlaylist(playlist);
 		}
 	}
 
