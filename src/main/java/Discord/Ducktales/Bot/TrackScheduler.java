@@ -223,8 +223,12 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 
 	@Override
 	public void playlistLoaded(AudioPlaylist playlist) {
-		for (AudioTrack track : playlist.getTracks())
-			this.queue(track);
+		if (playlist.isSearchResult()) {
+			this.queue(playlist.getTracks().get(0));
+		} else {
+			for (AudioTrack track : playlist.getTracks())
+				this.queue(track);
+		}
 	}
 
 	@Override

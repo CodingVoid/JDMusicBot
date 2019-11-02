@@ -172,6 +172,44 @@ public class App {
 			}
 		}));
 
+		/* search Command */
+		commands.put("search", new CommandInfo("search [youtube-search-query]", "Search for an Youtube Video and play the first result", event -> {
+			final Member member = event.getMember().orElse(null);
+			if (member != null) {
+				final VoiceState voiceState = member.getVoiceState().block();
+				if (voiceState != null) {
+					final VoiceChannel channel = voiceState.getChannel().block();
+					if (channel != null) {
+						logger.debug("At search Command: Get VoiceChannel of Ducktales Bot");
+						//VoiceChannel schan = client.getSelf().block().asMember(channel.getGuildId()).block().getVoiceState().block().getChannel().block();
+						VoiceChannel schan = client.getSelf().flatMap(user -> user.asMember(channel.getGuildId())).flatMap(mem -> mem.getVoiceState()).flatMap(vstate -> vstate.getChannel()).block();
+						logger.debug("At search Command: Check if Ducktales Bot is already in the VoiceChannel");
+						if (!channel.equals(schan)) {
+							/* If you are not in the voice channel of the caller, join the voice channel */
+							logger.debug("At play Command: Joining... VoiceChannel");
+							App.vcons.put(channel.getGuildId().asLong(), channel.join(spec -> spec.setProvider(provider)).block());
+						}
+						else {
+							logger.debug("At search Command: Ducktales Bot already in the VoiceChannel");
+						}
+						logger.debug("At search Command: Load Audio-Track");
+						String url = event.getMessage().getContent().get();
+						url = url.substring(url.indexOf(' '));
+						playerManager.loadItem("ytsearch: " + url, trackScheduler);
+					}
+					else {
+						logger.debug("At search Command: User is not in a Voicechannel");
+					}
+				}
+				else {
+					logger.debug("At search Command: Can't get Voicestate of User");
+				}
+			}
+			else {
+				logger.debug("At search Command: Can't get Member of User");
+			}
+		}));
+
 		commands.put("list", new CommandInfo("list [count]", "Lists the next 10 Tracks or the next [count] tracks if specified", event -> {
 			String[] args = event.getMessage().getContent().get().split(" ");
 			if (args.length > 1)
@@ -200,6 +238,7 @@ public class App {
 			channel.createMessage(MSG_PREFIX + "Self-ID: " + client.getSelfId().get().asString() + "\nSelf-Name: " + client.getSelf().block().getUsername() + MSG_POSTFIX).block();
 			playerManager.loadItem("https://www.youtube.com/watch?v=fzQ6gRAEoy0", trackScheduler);
 		}));
+
 		commands.put("leave", new CommandInfo("leave", "Tell the Ducktales Bot to leave it's current voice-channel", event -> {
 			long discordServer = event.getGuildId().get().asLong();
 			String serverName = client.getGuildById(Snowflake.of(discordServer)).block().getName();
