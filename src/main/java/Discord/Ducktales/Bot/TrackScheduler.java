@@ -12,6 +12,7 @@ import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 
 import discord4j.core.object.entity.MessageChannel;
 
@@ -53,7 +54,9 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 		String output = "Currently running Queue:\n";
 		/* get currently Playing track if one is playing */
 		if (ctrack != null) {
-			output += String.format("%s [%d:%02d]\n", ctrack.getInfo().title, this.getMinutes(ctrack.getInfo().length), this.getSeconds(ctrack.getInfo().length));
+			long pos = ctrack.getPosition();
+			long milli = ctrack.getInfo().length;
+			output += String.format("%s [%d:%02d] at [%d:%02d]\n", ctrack.getInfo().title, this.getMinutes(milli), this.getSeconds(milli), this.getMinutes(pos), this.getSeconds(pos));
 		}
 
 		output += queue.stream()
