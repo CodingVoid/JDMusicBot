@@ -234,7 +234,7 @@ public class App {
 
 		commands.put("test", new CommandInfo("test", "Test", event -> {
 			MessageChannel channel = event.getMessage().getChannel().block();
-			client.getGuilds().collectList().block().forEach(guild -> channel.createMessage(MSG_PREFIX + "Group-ID: " + guild.getId().asString() + "\nGroup-Name: " + guild.getName() + MSG_POSTFIX).block());
+			client.getGuilds().collectList().block().forEach(guild -> channel.createMessage(MSG_PREFIX + "Guild-ID: " + guild.getId().asString() + "\nGuild-Name: " + guild.getName() + MSG_POSTFIX).block());
 			channel.createMessage(MSG_PREFIX + "Self-ID: " + client.getSelfId().get().asString() + "\nSelf-Name: " + client.getSelf().block().getUsername() + MSG_POSTFIX).block();
 			playerManager.loadItem("https://www.youtube.com/watch?v=fzQ6gRAEoy0", trackScheduler);
 		}));
