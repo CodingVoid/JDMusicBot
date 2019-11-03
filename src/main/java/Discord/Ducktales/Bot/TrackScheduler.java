@@ -49,13 +49,19 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 	 * @param number of next Queue Entrys to show
 	 */
 	public void showQueue(int count) {
-		queue.forEach(track -> logger.debug(String.format("%s [%d:%02d]", track.getInfo().title, this.getMinutes(track.getInfo().length), this.getSeconds(track.getInfo().length))));
-		String output = queue.stream()
+		AudioTrack ctrack = player.getPlayingTrack();
+		String output = "Currently running Queue:\n";
+		/* get currently Playing track if one is playing */
+		if (ctrack != null) {
+			output += String.format("%s [%d:%02d]\n", ctrack.getInfo().title, this.getMinutes(ctrack.getInfo().length), this.getSeconds(ctrack.getInfo().length));
+		}
+
+		output += queue.stream()
 			.limit(count)
 			.map(track -> String.format("%s [%d:%02d]", track.getInfo().title, getMinutes(track.getInfo().length), getSeconds(track.getInfo().length)))
 			.collect(Collectors.joining("\n"));
-		logger.debug("Show Queue:\n" + output);
-		outputChannel.createMessage(App.MSG_PREFIX + "Currently running Queue:\n" + output + App.MSG_POSTFIX).block();
+		logger.debug(output);
+		outputChannel.createMessage(App.MSG_PREFIX + output + App.MSG_POSTFIX).block();
 	}
 
 	/**
