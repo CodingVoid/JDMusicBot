@@ -212,10 +212,18 @@ public class App {
 
 		commands.put("list", new CommandInfo("list [count]", "Lists the next 10 Tracks or the next [count] tracks if specified", event -> {
 			String[] args = event.getMessage().getContent().get().split(" ");
-			if (args.length > 1)
-				trackScheduler.showQueue(Integer.parseInt(args[1]));
-			else
+			if (args.length > 1) {
+				int num;
+				try {
+					num = Integer.parseInt(args[1]);
+				} catch (NumberFormatException e) {
+					num = 10;
+				}
+				trackScheduler.showQueue(num);
+			}
+			else {
 				trackScheduler.showQueue(10);
+			}
 		}));
 
 		commands.put("stop", new CommandInfo("stop", "Skips the currently playing AudioTrack and stops the Audioplayer", event -> trackScheduler.stopPlayer()));
