@@ -96,7 +96,7 @@ public class App {
 	private static Map<String, CommandInfo> commands = new HashMap<String, CommandInfo>();
 
 	/* Holds the currently active Connections to a Voice-Chat and is being used to disconnect from a Voice-Channel */
-	private static Map<Long, VoiceConnection> vcons = new HashMap<Long, VoiceConnection>();
+	private static VoiceConnection vcon;
 
 	private static void initializeCommands() {
 		/* help Command */
@@ -127,8 +127,11 @@ public class App {
 				if (voiceState != null) {
 					final VoiceChannel channel = voiceState.getChannel().block();
 					if (channel != null) {
+						/* Need to disconnect from a previous Voicechannel first, because otherwise the channel.join command blocks indefinetly */
+						if (App.vcon != null)
+							App.vcon.disconnect();
 						logger.debug("At join Command: Try to Join VoiceChannel");
-						App.vcons.put(channel.getGuildId().asLong(), channel.join(spec -> spec.setProvider(provider)).block(Duration.ofSeconds(2)));
+						App.vcon = channel.join(spec -> spec.setProvider(provider)).block();
 						logger.debug("At join Command: Tried to Join VoiceChannel. Either Successed or is timed out.");
 					}
 				}
@@ -145,12 +148,19 @@ public class App {
 					if (channel != null) {
 						logger.debug("At play Command: Get VoiceChannel of Ducktales Bot");
 						//VoiceChannel schan = client.getSelf().block().asMember(channel.getGuildId()).block().getVoiceState().block().getChannel().block();
-						VoiceChannel schan = client.getSelf().flatMap(user -> user.asMember(channel.getGuildId())).flatMap(mem -> mem.getVoiceState()).flatMap(vstate -> vstate.getChannel()).block();
+						VoiceChannel schan = client.getSelf().
+							flatMap(user -> user.asMember(channel.getGuildId())).
+							flatMap(mem -> mem.getVoiceState()).
+							flatMap(vstate -> vstate.getChannel())
+							.block();
 						logger.debug("At play Command: Check if Ducktales Bot is already in the VoiceChannel");
 						if (!channel.equals(schan)) {
+							/* Need to disconnect from a previous Voicechannel first, because otherwise the channel.join command blocks indefinetly */
+							if (App.vcon != null)
+								App.vcon.disconnect();
 							/* If you are not in the voice channel of the caller, join the voice channel */
 							logger.debug("At play Command: Joining... VoiceChannel");
-							App.vcons.put(channel.getGuildId().asLong(), channel.join(spec -> spec.setProvider(provider)).block());
+							App.vcon = channel.join(spec -> spec.setProvider(provider)).block();
 						}
 						else {
 							logger.debug("At play Command: Ducktales Bot already in the VoiceChannel");
@@ -185,9 +195,12 @@ public class App {
 						VoiceChannel schan = client.getSelf().flatMap(user -> user.asMember(channel.getGuildId())).flatMap(mem -> mem.getVoiceState()).flatMap(vstate -> vstate.getChannel()).block();
 						logger.debug("At search Command: Check if Ducktales Bot is already in the VoiceChannel");
 						if (!channel.equals(schan)) {
+							/* Need to disconnect from a previous Voicechannel first, because otherwise the channel.join command blocks indefinetly */
+							if (App.vcon != null)
+								App.vcon.disconnect();
 							/* If you are not in the voice channel of the caller, join the voice channel */
 							logger.debug("At play Command: Joining... VoiceChannel");
-							App.vcons.put(channel.getGuildId().asLong(), channel.join(spec -> spec.setProvider(provider)).block());
+							App.vcon = channel.join(spec -> spec.setProvider(provider)).block();
 						}
 						else {
 							logger.debug("At search Command: Ducktales Bot already in the VoiceChannel");
@@ -248,18 +261,15 @@ public class App {
 		}));
 
 		commands.put("leave", new CommandInfo("leave", "Tell the Ducktales Bot to leave it's current voice-channel", event -> {
-			long discordServer = event.getGuildId().get().asLong();
-			String serverName = client.getGuildById(Snowflake.of(discordServer)).block().getName();
 			MessageChannel channel = event.getMessage().getChannel().block();
-			if (vcons.containsKey(discordServer)) {
-				VoiceConnection vcon = vcons.remove(discordServer);
-				logger.debug("At leave Command: Disconnect from VoiceChannel of Discord-Server: " + serverName);
+			if (vcon != null) {
+				logger.debug("At leave Command: Disconnect from VoiceChannel");
 				vcon.disconnect();
-				channel.createMessage(MSG_PREFIX + "Disconnected from VoiceChannel of Discord-Server: " + serverName + MSG_POSTFIX).block();
+				channel.createMessage(MSG_PREFIX + "Disconnected from VoiceChannel" + MSG_POSTFIX).block();
 			}
 			else {
-				logger.debug("At leave Command: Bot is not in a VoiceChannel on this Server");
-				channel.createMessage(MSG_PREFIX + "I am not in a VoiceChannel on Discord-Server: " + serverName + MSG_POSTFIX).block();
+				logger.debug("At leave Command: Bot is not in a VoiceChannel");
+				channel.createMessage(MSG_PREFIX + "I am not in a VoiceChannel: " + MSG_POSTFIX).block();
 			}
 		}));
 		commands.put("logout", new CommandInfo("logout", "Exit the Ducktales Bot Program", event -> {
