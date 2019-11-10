@@ -62,9 +62,15 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 		output += queue.stream()
 			.limit(count)
 			.map(track -> String.format("%s [%d:%02d]", track.getInfo().title, getMinutes(track.getInfo().length), getSeconds(track.getInfo().length)))
-			.collect(Collectors.joining("\n"));
+			.collect(Collectors.joining("\n"))
+			.toString();
+
 		logger.debug(output);
-		outputChannel.createMessage(App.MSG_PREFIX + output + App.MSG_POSTFIX).block();
+		/* Split String into Chunks of 1500 size (because of Discords max message length)*/
+		String[] outputs = output.split("(?s)(?<=\\G.{1000})");
+		for (String out : outputs) {
+			outputChannel.createMessage(App.MSG_PREFIX + out + App.MSG_POSTFIX).block();
+		}
 	}
 
 	/**
