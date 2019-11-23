@@ -1,10 +1,7 @@
 package Discord.Ducktales.Bot;
 
-import discord4j.core.event.domain.message.MessageCreateEvent;
-import reactor.core.publisher.Mono;
+import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
 
 public interface Command {
-	public void execute(MessageCreateEvent event);
-	/* Reactive Way */
-	// public Mono<Void> execute(MessageCreateEvent event);
+	public void execute(GuildMessageReceivedEvent event);
 }
