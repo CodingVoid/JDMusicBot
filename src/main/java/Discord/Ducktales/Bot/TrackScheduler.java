@@ -58,7 +58,7 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 		if (ctrack != null) {
 			long pos = ctrack.getPosition();
 			long milli = ctrack.getInfo().length;
-			output += String.format("%s [%d:%02d] at [%d:%02d]\n", ctrack.getInfo().title, this.getMinutes(milli), this.getSeconds(milli), this.getMinutes(pos), this.getSeconds(pos));
+			output += String.format("%s [%d:%02d / %d:%02d]\n", ctrack.getInfo().title, this.getMinutes(pos), this.getSeconds(milli), this.getMinutes(milli), this.getSeconds(pos));
 		}
 
 		output += queue.stream()
