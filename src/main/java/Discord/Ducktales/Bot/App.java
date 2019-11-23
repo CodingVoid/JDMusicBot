@@ -18,6 +18,7 @@ import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 import net.dv8tion.jda.api.AccountType;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.audio.AudioSendHandler;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
@@ -82,7 +83,7 @@ public class App extends ListenerAdapter {
 	public void onGuildMessageReceived(GuildMessageReceivedEvent event) {
 		/* Set Bot Output Channel for more Output */
 		trackScheduler.setOutputChannel(event.getChannel());
-
+		//if (event.getGuild().getSelfMember().hasPermission(event.getChannel(), Permission.MESSAGE_WRITE))
 		event.getGuild().getAudioManager().setSendingHandler(provider);
 
 		String content = event.getMessage().getContentRaw();
@@ -108,12 +109,12 @@ public class App extends ListenerAdapter {
 				builder.append(info.description);
 				builder.append("\n\n");
 			}
-			channel.sendMessage(MSG_PREFIX + builder.toString() + MSG_POSTFIX);
+			channel.sendMessage(MSG_PREFIX + builder.toString() + MSG_POSTFIX).queue();
 		}));
 
 		/* ping Command */
 		commands.put("ping", new CommandInfo("ping", "get yourself a pong", event -> {
-			event.getMessage().getChannel().sendMessage(MSG_PREFIX + "Pong" + MSG_POSTFIX);
+			event.getMessage().getChannel().sendMessage(MSG_PREFIX + "Pong" + MSG_POSTFIX).queue();
 		}));
 
 		/* join Command */
@@ -202,7 +203,7 @@ public class App extends ListenerAdapter {
 		commands.put("leave", new CommandInfo("leave", "Tell the Ducktales Bot to leave it's current voice-channel", event -> {
 			logger.debug("At leave Command: Disconnect from VoiceChannel of Discord-Server");
 			event.getGuild().getAudioManager().closeAudioConnection();
-			event.getChannel().sendMessage(MSG_PREFIX + "Disconnected from VoiceChannel" + MSG_POSTFIX);
+			event.getChannel().sendMessage(MSG_PREFIX + "Disconnected from VoiceChannel" + MSG_POSTFIX).queue();
 		}));
 	}
 }
