@@ -49,7 +49,7 @@ public class App extends ListenerAdapter {
 
 		try {
 			 JDA jdabuild = new JDABuilder(AccountType.BOT)
-				.setToken("Mjg3MzI4MzU5Njc4MjE0MTU1.XayxVg.OOMDFgF66DVClhe_HTBfThB5_cA")
+				.setToken("Mjg3MzI4MzU5Njc4MjE0MTU1.XnjLzA.OiaKLNVnHBaGWFJrzZvO-0iKAoo")
 				.addEventListeners(new App())
 				.build();
 			 jdabuild.awaitReady();
