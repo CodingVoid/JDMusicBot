@@ -1,4 +1,4 @@
-package Discord.Ducktales.Bot;
+package jdmusicbot;
 
 import java.io.File;
 import java.io.FileOutputStream;

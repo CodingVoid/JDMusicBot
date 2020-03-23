@@ -6,7 +6,7 @@ plugins {
 jar {
 	manifest {
 		attributes(
-			'Main-Class': 'Discord.Ducktales.Bot.App'
+			'Main-Class': 'jdmusicbot.App'
 		)
 	}
 	from {
@@ -34,4 +34,4 @@ dependencies {
     testImplementation 'junit:junit:4.12'
 }
 
-mainClassName = 'Discord.Ducktales.Bot.App'
+mainClassName = 'jdmusicbot.App'

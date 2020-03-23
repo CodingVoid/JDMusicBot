@@ -1,4 +1,4 @@
-package Discord.Ducktales.Bot;
+package jdmusicbot;
 
 public class CommandInfo {
 

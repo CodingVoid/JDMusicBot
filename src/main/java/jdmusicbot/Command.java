@@ -1,4 +1,4 @@
-package Discord.Ducktales.Bot;
+package jdmusicbot;
 
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
 
