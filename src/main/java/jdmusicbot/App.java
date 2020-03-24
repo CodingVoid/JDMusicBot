@@ -191,6 +191,9 @@ public class App extends ListenerAdapter {
 		/* unloop Command */
 		commands.put("unloop", new CommandInfo("unloop", "Stops the loop for the current AudioTrack", event -> trackScheduler.unloop()));
 
+        /* repeat Command */
+        commands.put("repeat", new CommandInfo("repeat", "Tell the JDMusicBot to repeat it's last played Track (last Played Track = Track is already over)", event -> trackScheduler.repeat()));
+
 		/* test Command */
 		commands.put("test", new CommandInfo("test", "Test", event -> {
 			//MessageChannel channel = event.getMessage().getChannel();
@@ -205,5 +208,6 @@ public class App extends ListenerAdapter {
 			event.getGuild().getAudioManager().closeAudioConnection();
 			event.getChannel().sendMessage(MSG_PREFIX + "Disconnected from VoiceChannel" + MSG_POSTFIX).queue();
 		}));
+
 	}
 }

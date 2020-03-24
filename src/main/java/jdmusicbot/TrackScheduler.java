@@ -26,6 +26,7 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 	private Logger logger = new Logger("TrackScheduler-Logger");
 	private boolean loop = false;
 	private AudioTrack loopTrack;
+    private AudioTrack lastTrack;
 
 	/**
 	 * @param player The audio player this scheduler uses
@@ -82,7 +83,7 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 	public void queue(AudioTrack track) {
 		//	Calling startTrack with the noInterrupt set to true will start the track only if nothing is currently playing. If
 		// something is playing, it returns false and does nothing. In that case the player was already playing so this
-		// track goes to the queue instead.
+		// track goes to the queue instead. Passing null will just stop the current track and return false
 		if (!player.startTrack(track, true)) {
 			logger.debug("Queueing... new AudioTrack: " + track.getInfo().title);
 			queue.offer(track);
@@ -91,6 +92,12 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 			outputChannel.sendMessage(App.MSG_PREFIX + formatted + App.MSG_POSTFIX).queue();
 		}
 	}
+    
+    public void repeat() {
+        if (this.lastTrack != null) {
+            this.queue(this.lastTrack);
+        }
+    }
 
 	public void queuePlaylist(AudioPlaylist playlist) {
 		List<AudioTrack> tracks = playlist.getTracks();
@@ -220,6 +227,7 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 		}
 		// Only start the next track if the end reason is suitable for it (FINISHED or LOAD_FAILED)
 		if (endReason.mayStartNext) {
+            lastTrack = track.makeClone(); // set the last played track
 			nextTrack();
 		}
 	}
@@ -251,6 +259,7 @@ public class TrackScheduler extends AudioEventAdapter implements AudioLoadResult
 	public void onTrackException(AudioPlayer player, AudioTrack track, FriendlyException exception) {
 		// An already playing track threw an exception (track end event will still be received separately)
 		logger.debug("Playing Track: " + track.getInfo().title + " threw an exception: " + exception.getMessage());
+        nextTrack();
 	}
 
 	@Override
