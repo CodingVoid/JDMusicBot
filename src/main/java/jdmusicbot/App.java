@@ -18,19 +18,16 @@ import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 import net.dv8tion.jda.api.AccountType;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
-import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.audio.AudioSendHandler;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.managers.AudioManager;
-import net.dv8tion.jda.api.utils.WidgetUtil.Widget.VoiceState;
 
 
 public class App extends ListenerAdapter {
 
 	private Logger logger = new Logger("Command-Logger");
-	//private static final DiscordClient client = new DiscordClientBuilder("Mjg3MzI4MzU5Njc4MjE0MTU1.XayxVg.OOMDFgF66DVClhe_HTBfThB5_cA").build();
 
 	public static final String CMD_PREFIX = "#";
 	public static final String MSG_PREFIX = "```";
@@ -44,12 +41,11 @@ public class App extends ListenerAdapter {
 	private Map<String, CommandInfo> commands = new HashMap<String, CommandInfo>();
 
 	public static void main(String[] args) {
-		//Runtime.getRuntime().addShutdownHook(new Thread(() -> client.logout().block(Duration.ofSeconds(1))));
-		Logger.addLogFile(new File("/var/log/jdmusicbot.log"));
+		//Logger.addLogFile(new File("/var/log/jdmusicbot.log"));
 
 		try {
 			 JDA jdabuild = new JDABuilder(AccountType.BOT)
-				.setToken("Mjg3MzI4MzU5Njc4MjE0MTU1.XnjLzA.OiaKLNVnHBaGWFJrzZvO-0iKAoo")
+				.setToken("YOUR TOKEN HERE")
 				.addEventListeners(new App())
 				.build();
 			 jdabuild.awaitReady();
