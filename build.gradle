@@ -24,7 +24,7 @@ repositories {
 }
 
 dependencies {
-	compile 'com.sedmelluq:lavaplayer:1.3.22'
+	compile 'com.sedmelluq:lavaplayer:1.3.50'
 	//implementation 'com.discord4j:discord4j-core:3.0.10'
 	//compile 'com.discord4j:discord4j-core:3.0.10'
 	compile ('net.dv8tion:JDA:4.0.0_39') {
