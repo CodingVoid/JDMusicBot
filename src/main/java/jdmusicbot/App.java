@@ -41,11 +41,10 @@ public class App extends ListenerAdapter {
 	private Map<String, CommandInfo> commands = new HashMap<String, CommandInfo>();
 
 	public static void main(String[] args) {
-		//Logger.addLogFile(new File("/var/log/jdmusicbot.log"));
+		Logger.addLogFile(new File("/var/log/jdmusicbot.log"));
 
 		try {
-			 JDA jdabuild = new JDABuilder(AccountType.BOT)
-				.setToken("YOUR TOKEN HERE")
+			 JDA jdabuild = JDABuilder.createDefault("YOUR TOKEN HERE")
 				.addEventListeners(new App())
 				.build();
 			 jdabuild.awaitReady();
@@ -77,133 +76,133 @@ public class App extends ListenerAdapter {
 
 	@Override
 	public void onGuildMessageReceived(GuildMessageReceivedEvent event) {
-		/* Set Bot Output Channel for more Output */
-		trackScheduler.setOutputChannel(event.getChannel());
 		//if (event.getGuild().getSelfMember().hasPermission(event.getChannel(), Permission.MESSAGE_WRITE))
 		event.getGuild().getAudioManager().setSendingHandler(provider);
 
 		String content = event.getMessage().getContentRaw();
-		for (final Map.Entry<String, CommandInfo> entry : commands.entrySet()) {
-			if (content.startsWith(CMD_PREFIX + entry.getKey())) {
-				entry.getValue().cmd.execute(event);
-				break;
-			}
-		}
-		super.onGuildMessageReceived(event);
-	}
+        for (final Map.Entry<String, CommandInfo> entry : commands.entrySet()) {
+            if (content.startsWith(CMD_PREFIX + entry.getKey())) {
+                /* Set Bot Output Channel for more Output */
+                trackScheduler.setOutputChannel(event.getChannel());
+                entry.getValue().cmd.execute(event);
+                break;
+            }
+        }
+        super.onGuildMessageReceived(event);
+    }
 
-	private void initializeCommands() {
-		/* help Command */
-		commands.put("help", new CommandInfo("help", "Show the Help Message", event -> {
-			MessageChannel channel = event.getChannel();
-			StringBuilder builder = new StringBuilder();
-			for (final Map.Entry<String, CommandInfo> entry : commands.entrySet()) {
-				CommandInfo info = entry.getValue();
-				builder.append("Command/Usage: ");
-				builder.append(CMD_PREFIX + info.usage);
-				builder.append("\nDescription: ");
-				builder.append(info.description);
-				builder.append("\n\n");
-			}
-			channel.sendMessage(MSG_PREFIX + builder.toString() + MSG_POSTFIX).queue();
-		}));
+    private void initializeCommands() {
+        /* help Command */
+        commands.put("help", new CommandInfo("help", "Show the Help Message", event -> {
+            MessageChannel channel = event.getChannel();
+            StringBuilder builder = new StringBuilder();
+            for (final Map.Entry<String, CommandInfo> entry : commands.entrySet()) {
+                CommandInfo info = entry.getValue();
+                builder.append("Command/Usage: ");
+                builder.append(CMD_PREFIX + info.usage);
+                builder.append("\nDescription: ");
+                builder.append(info.description);
+                builder.append("\n\n");
+            }
+            channel.sendMessage(MSG_PREFIX + builder.toString() + MSG_POSTFIX).queue();
+        }));
 
-		/* ping Command */
-		commands.put("ping", new CommandInfo("ping", "get yourself a pong", event -> {
-			event.getMessage().getChannel().sendMessage(MSG_PREFIX + "Pong" + MSG_POSTFIX).queue();
-		}));
+        /* ping Command */
+        commands.put("ping", new CommandInfo("ping", "get yourself a pong", event -> {
+            event.getMessage().getChannel().sendMessage(MSG_PREFIX + "Pong" + MSG_POSTFIX).queue();
+        }));
 
-		/* join Command */
-		commands.put("join", new CommandInfo("join", "let JDMusicBot join your voice channel", event -> {
-			AudioManager audioManager = event.getGuild().getAudioManager();
-			if (!audioManager.isConnected() && !audioManager.isAttemptingToConnect()) {
-				logger.debug("At join Command: Try to Join VoiceChannel");
-				audioManager.openAudioConnection(event.getMember().getVoiceState().getChannel());
-				logger.debug("At join Command: Tried to Join VoiceChannel. Either Successed or is timed out.");
-			}
-		}));
+        /* join Command */
+        commands.put("join", new CommandInfo("join", "let JDMusicBot join your voice channel", event -> {
+            AudioManager audioManager = event.getGuild().getAudioManager();
+            if (!audioManager.isConnected()) {
+                logger.debug("At join Command: Try to Join VoiceChannel");
+                audioManager.openAudioConnection(event.getMember().getVoiceState().getChannel());
+                logger.debug("At join Command: Tried to Join VoiceChannel. Either Successed or is timed out.");
+            }
+        }));
 
-		/* play Command */
-		commands.put("play", new CommandInfo("play [youtube-video-link or Soundcloud or ...]", "Let the JDMusicBot join your voice channel. If no Track is currently playing it's directly started and if not it's appended to the Audio-Queue", event -> {
-			AudioManager audioManager = event.getGuild().getAudioManager();
-			if (!audioManager.isConnected() && !audioManager.isAttemptingToConnect()) {
-				logger.debug("At play Command: Try to Join VoiceChannel");
-				audioManager.openAudioConnection(event.getMember().getVoiceState().getChannel());
-				logger.debug("At play Command: Tried to Join VoiceChannel. Either Successed or is timed out.");
-			}
-			logger.debug("At play Command: Load Audio-Track");
-			String url = event.getMessage().getContentRaw().split(" ")[1];
-			playerManager.loadItem(url, trackScheduler);
-		}));
+        /* play Command */
+        commands.put("play", new CommandInfo("play [youtube-video-link or Soundcloud or ...]", "Let the JDMusicBot join your voice channel. If no Track is currently playing it's directly started and if not it's appended to the Audio-Queue", event -> {
+            AudioManager audioManager = event.getGuild().getAudioManager();
+            if (!audioManager.isConnected()) {
+                logger.debug("At play Command: Try to Join VoiceChannel");
+                audioManager.openAudioConnection(event.getMember().getVoiceState().getChannel());
+                logger.debug("At play Command: Tried to Join VoiceChannel. Either Successed or is timed out.");
+            }
+            logger.debug("At play Command: Load Audio-Track");
+            String url = event.getMessage().getContentRaw().split(" ")[1];
+            playerManager.loadItem(url, trackScheduler);
+        }));
 
-		/* search Command */
-		commands.put("search", new CommandInfo("search [youtube-search-query]", "Search for an Youtube Video and play the first result", event -> {
-			AudioManager audioManager = event.getGuild().getAudioManager();
-			if (!audioManager.isConnected() && !audioManager.isAttemptingToConnect()) {
-				logger.debug("At play Command: Try to Join VoiceChannel");
-				audioManager.openAudioConnection(event.getMember().getVoiceState().getChannel());
-				logger.debug("At play Command: Tried to Join VoiceChannel. Either Successed or is timed out.");
-			}
-			logger.debug("At play Command: Load Audio-Track");
-			String search = event.getMessage().getContentRaw().split(" ", 2)[1];
-			playerManager.loadItem("ytsearch: " + search, trackScheduler);
-		}));
+        /* search Command */
+        commands.put("search", new CommandInfo("search [youtube-search-query]", "Search for an Youtube Video and play the first result", event -> {
+            AudioManager audioManager = event.getGuild().getAudioManager();
+            if (!audioManager.isConnected()) {
+                logger.debug("At play Command: Try to Join VoiceChannel");
+                audioManager.openAudioConnection(event.getMember().getVoiceState().getChannel());
+                logger.debug("At play Command: Tried to Join VoiceChannel. Either Successed or is timed out.");
+            }
+            logger.debug("At play Command: Load Audio-Track");
+            String search = event.getMessage().getContentRaw().split(" ", 2)[1];
+            playerManager.loadItem("ytsearch: " + search, trackScheduler);
+        }));
 
-		/* list Command */
-		commands.put("list", new CommandInfo("list [count]", "Lists the next 10 Tracks or the next [count] tracks if specified", event -> {
-			String[] args = event.getMessage().getContentRaw().split(" ");
-			if (args.length > 1) {
-				int num;
-				try {
-					num = Integer.parseInt(args[1]);
-				} catch (NumberFormatException e) {
-					num = 10;
-				}
-				trackScheduler.showQueue(num);
-			}
-			else {
-				trackScheduler.showQueue(10);
-			}
-		}));
+        /* list Command */
+        commands.put("list", new CommandInfo("list [count]", "Lists the next 10 Tracks or the next [count] tracks if specified", event -> {
+            String[] args = event.getMessage().getContentRaw().split(" ");
+            if (args.length > 1) {
+                int num;
+                try {
+                    num = Integer.parseInt(args[1]);
+                } catch (NumberFormatException e) {
+                    num = 10;
+                }
+                trackScheduler.showQueue(num);
+            }
+            else {
+                trackScheduler.showQueue(10);
+            }
+        }));
 
-		/* stop Command */
-		commands.put("stop", new CommandInfo("stop", "Skips the currently playing AudioTrack and stops the Audioplayer", event -> trackScheduler.stopPlayer()));
+        /* stop Command */
+        commands.put("stop", new CommandInfo("stop", "Skips the currently playing AudioTrack and stops the Audioplayer", event -> trackScheduler.stopPlayer()));
 
-		/* pause Command */
-		commands.put("pause", new CommandInfo("pause", "Pauses the Audioplayer", event -> trackScheduler.pausePlayer()));
+        /* pause Command */
+        commands.put("pause", new CommandInfo("pause", "Pauses the Audioplayer", event -> trackScheduler.pausePlayer()));
 
-		/* resume Command */
-		commands.put("resume", new CommandInfo("resume", "Resumes the Audioplayer if it's paused or if it is stopped", event -> trackScheduler.resumePlayer()));
+        /* resume Command */
+        commands.put("resume", new CommandInfo("resume", "Resumes the Audioplayer if it's paused or if it is stopped", event -> trackScheduler.resumePlayer()));
 
-		/* skip Command */
-		commands.put("skip", new CommandInfo("skip", "Skips the currently playing audio", event -> trackScheduler.nextTrack()));
+        /* skip Command */
+        commands.put("skip", new CommandInfo("skip", "Skips the currently playing audio", event -> trackScheduler.nextTrack()));
 
-		/* clear Command */
-		commands.put("clear", new CommandInfo("clear", "Clears the entire Queue", event -> trackScheduler.clear()));
+        /* clear Command */
+        commands.put("clear", new CommandInfo("clear", "Clears the entire Queue", event -> trackScheduler.clear()));
 
-		/* loop Command */
-		commands.put("loop", new CommandInfo("loop", "Loops the current Track", event -> trackScheduler.loop()));
+        /* loop Command */
+        commands.put("loop", new CommandInfo("loop", "Loops the current Track", event -> trackScheduler.loop()));
 
-		/* unloop Command */
-		commands.put("unloop", new CommandInfo("unloop", "Stops the loop for the current AudioTrack", event -> trackScheduler.unloop()));
+        /* unloop Command */
+        commands.put("unloop", new CommandInfo("unloop", "Stops the loop for the current AudioTrack", event -> trackScheduler.unloop()));
 
         /* repeat Command */
         commands.put("repeat", new CommandInfo("repeat", "Tell the JDMusicBot to repeat it's last played Track (last Played Track = Track is already over)", event -> trackScheduler.repeat()));
 
-		/* test Command */
-		commands.put("test", new CommandInfo("test", "Test", event -> {
-			//MessageChannel channel = event.getMessage().getChannel();
-			//client.getGuilds().collectList().block().forEach(guild -> channel.createMessage(MSG_PREFIX + "Group-ID: " + guild.getId().asString() + "\nGroup-Name: " + guild.getName() + MSG_POSTFIX).block());
-			//channel.createMessage(MSG_PREFIX + "Self-ID: " + client.getSelfId().get().asString() + "\nSelf-Name: " + client.getSelf().block().getUsername() + MSG_POSTFIX).block();
-			playerManager.loadItem("https://www.youtube.com/watch?v=fzQ6gRAEoy0", trackScheduler);
-		}));
+        /* test Command */
+        commands.put("test", new CommandInfo("test", "Test", event -> {
+            //MessageChannel channel = event.getMessage().getChannel();
+            //client.getGuilds().collectList().block().forEach(guild -> channel.createMessage(MSG_PREFIX + "Group-ID: " + guild.getId().asString() + "\nGroup-Name: " + guild.getName() + MSG_POSTFIX).block());
+            //channel.createMessage(MSG_PREFIX + "Self-ID: " + client.getSelfId().get().asString() + "\nSelf-Name: " + client.getSelf().block().getUsername() + MSG_POSTFIX).block();
+            playerManager.loadItem("https://www.youtube.com/watch?v=fzQ6gRAEoy0", trackScheduler);
+        }));
 
-		/* leave Command */
-		commands.put("leave", new CommandInfo("leave", "Tell the JDMusicBot to leave it's current voice-channel", event -> {
-			logger.debug("At leave Command: Disconnect from VoiceChannel of Discord-Server");
-			event.getGuild().getAudioManager().closeAudioConnection();
-			event.getChannel().sendMessage(MSG_PREFIX + "Disconnected from VoiceChannel" + MSG_POSTFIX).queue();
-		}));
+        /* leave Command */
+        commands.put("leave", new CommandInfo("leave", "Tell the JDMusicBot to leave it's current voice-channel", event -> {
+            logger.debug("At leave Command: Disconnect from VoiceChannel of Discord-Server");
+            event.getGuild().getAudioManager().closeAudioConnection();
+            event.getChannel().sendMessage(MSG_PREFIX + "Disconnected from VoiceChannel" + MSG_POSTFIX).queue();
+        }));
 
-	}
+    }
 }
