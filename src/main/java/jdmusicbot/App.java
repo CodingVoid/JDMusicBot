@@ -41,7 +41,15 @@ public class App extends ListenerAdapter {
 	private Map<String, CommandInfo> commands = new HashMap<String, CommandInfo>();
 
 	public static void main(String[] args) {
-		Logger.addLogFile(new File("/var/log/jdmusicbot.log"));
+        String logFolder = System.getenv("XDG_DATA_HOME");
+        if (logFolder == null) {
+            logFolder = System.getenv("HOME");
+            if (logFolder == null)
+                logFolder = "/var/log";
+            else
+                logFolder += "/.local/share";
+        }
+        Logger.addLogFile(new File(logFolder + "/jdmusicbot.log"));
 
 		try {
 			 JDA jdabuild = JDABuilder.createDefault("YOUR TOKEN HERE")
